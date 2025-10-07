@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>💎 Diamond Clicker- AURA UPDATE 🌌</title>
+  <title>💎 Diamond Clicker - AURA UPDATE 🌌</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -69,7 +69,7 @@
   <div id="rank-button">Ranks (Online)</div>
   <div id="rank-panel"></div>
 
-  <h1>💎 Diamond Clicker- AURA UPDATE 🌌</h1>
+  <h1>💎 Diamond Clicker - AURA UPDATE 🌌</h1>
   <div id="playerName"></div>
 
   <div id="counters">
@@ -110,20 +110,19 @@
       from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const firebaseConfig = {
-  apiKey: "AIzaSyB7c4UCU7qpVecl5JM-wRSMnqFz9DCjdlA",
-  authDomain: "diamondclicker-b3a0a.firebaseapp.com",
-  projectId: "diamondclicker-b3a0a",
-  storageBucket: "diamondclicker-b3a0a.firebasestorage.app",
-  messagingSenderId: "334913006559",
-  appId: "1:334913006559:web:f1b73789e56c61d4a8b26a"
+     apiKey: "AIzaSyB7c4UCU7qpVecl5JM-wRSMnqFz9DCjdlA",
+     authDomain: "diamondclicker-b3a0a.firebaseapp.com",
+     projectId: "diamondclicker-b3a0a",
+     storageBucket: "diamondclicker-b3a0a.firebasestorage.app",
+     messagingSenderId: "334913006559",
+     appId: "1:334913006559:web:f1b73789e56c61d4a8b26a"
 };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     let playerName = localStorage.getItem("playerName");
     while (!playerName || playerName.trim() === "") {
-      playerName = prompt("Masukkan nama kamu (tidak boleh kosong):");
+      playerName = prompt("Enter your name:");
     }
     localStorage.setItem("playerName", playerName);
     document.getElementById("playerName").textContent = `👤 Player: ${playerName}`;
@@ -158,79 +157,90 @@
     }
 
     function rollAura() {
-      if (emeralds < 20000) return showMessage("Not enough Emeralds for roll!");
+      if (emeralds < 20000) return showMessage("Not enough Emeralds (Need 20,000 💚)");
       emeralds -= 20000;
       const aura = getAuraByChance();
       showMessage(`🎆 You got a ${aura.name} Aura!`);
       if (!ownedAuras.includes(aura.name)) ownedAuras.push(aura.name);
-      saveCounts();
+      saveData();
       renderOwnedAuras();
+      updateDisplay();
     }
 
     function equipAura(name) {
       equippedAura = name;
-      saveCounts();
-      updateDisplay();
+      localStorage.setItem("equippedAura", name);
       showMessage(`✨ Equipped ${name} Aura!`);
+      updateDisplay();
     }
 
     function getAuraBonus() {
       const aura = auraList.find(a => a.name === equippedAura);
-      return aura ? aura.bonus : { diamond:0, gold:0, emerald:0 };
+      return aura ? aura.bonus : { diamond: 0, gold: 0, emerald: 0 };
     }
 
+    function saveData() {
+      localStorage.setItem("diamondCount", diamonds);
+      localStorage.setItem("goldCount", gold);
+      localStorage.setItem("emeraldCount", emeralds);
+      localStorage.setItem("ownedAuras", JSON.stringify(ownedAuras));
+      saveHighScore();
+    }
+
+    function renderOwnedAuras() {
+      const div = document.getElementById("owned-auras");
+      div.innerHTML = "";
+      ownedAuras.forEach(aura => {
+        const btn = document.createElement("button");
+        btn.className = "equip-button";
+        btn.innerText = aura + " (Equip)";
+        btn.onclick = () => equipAura(aura);
+        div.appendChild(btn);
+      });
+      document.getElementById("equipped-aura").innerText = equippedAura;
+    }
+
+    function showMessage(msg) {
+      const el = document.getElementById("text-container");
+      el.innerText = msg;
+      setTimeout(() => el.innerText = "", 2500);
+    }
+
+    function updateDisplay() {
+      const bonus = getAuraBonus();
+      document.getElementById("diamond-count").textContent = diamonds.toLocaleString();
+      document.getElementById("gold-count").textContent = gold.toLocaleString();
+      document.getElementById("emerald-count").textContent = emeralds.toLocaleString();
+      document.getElementById("equipped-aura").textContent = equippedAura;
+    }
+
+    // Click buttons
     document.getElementById("diamond-button").onclick = () => {
-      const bonus = getAuraBonus();
-      diamonds += 1 + bonus.diamond;
-      saveCounts();
-      updateDisplay();
+      const b = getAuraBonus();
+      diamonds += 1 + b.diamond;
+      saveData(); updateDisplay();
     };
-
     document.getElementById("gold-button").onclick = () => {
-      const bonus = getAuraBonus();
-      gold += 1 + bonus.gold;
-      saveCounts();
-      updateDisplay();
+      const b = getAuraBonus();
+      gold += 1 + b.gold;
+      saveData(); updateDisplay();
     };
-
     document.getElementById("emerald-button").onclick = () => {
-      const bonus = getAuraBonus();
-      emeralds += 1 + bonus.emerald;
-      saveCounts();
-      updateDisplay();
-    };
-
-    document.getElementById("buy-gold-button").onclick = () => {
-      if (diamonds >= 100) {
-        diamonds -= 100;
-        gold++;
-        saveCounts();
-        updateDisplay();
-      } else showMessage("Need 100 Diamonds!");
-    };
-
-    document.getElementById("buy-emerald-button").onclick = () => {
-      if (diamonds >= 1000 && gold >= 700) {
-        diamonds -= 1000;
-        gold -= 700;
-        emeralds++;
-        saveCounts();
-        updateDisplay();
-      } else showMessage("Need more Diamonds or Gold!");
+      const b = getAuraBonus();
+      emeralds += 1 + b.emerald;
+      saveData(); updateDisplay();
     };
 
     document.getElementById("roll-aura-button").onclick = rollAura;
 
+    // Leaderboard
     async function saveHighScore() {
       const ref = doc(db, "auraScores", playerName);
       const snap = await getDoc(ref);
-      if (!snap.exists()) {
-        await setDoc(ref, { name: playerName, diamonds });
-      } else {
-        const oldScore = snap.data().diamonds || 0;
-        if (diamonds > oldScore) {
-          await updateDoc(ref, { name: playerName, diamonds });
-        }
+      if (!snap.exists()) await setDoc(ref, { name: playerName, diamonds });
+      else {
+        const old = snap.data().diamonds || 0;
+        if (diamonds > old) await updateDoc(ref, { diamonds });
       }
     }
 
@@ -241,68 +251,18 @@
       const q = query(collection(db, "auraScores"), orderBy("diamonds", "desc"), limit(30));
       const snap = await getDocs(q);
       return snap.docs.map((doc, i) => {
-        const data = doc.data();
-        return `${i + 1}. ${data.name || "Anon"} — ${data.diamonds} 💎`;
+        const d = doc.data();
+        return `${i + 1}. ${d.name || "Anon"} — ${d.diamonds} 💎`;
       });
     }
-
-    let rankRefreshInterval = null;
 
     rankButton.addEventListener("click", async () => {
-      if (rankPanel.style.display === "block") {
-        rankPanel.style.display = "none";
-        clearInterval(rankRefreshInterval);
-        rankRefreshInterval = null;
-        return;
-      }
-
+      if (rankPanel.style.display === "block") return rankPanel.style.display = "none";
       rankPanel.style.display = "block";
-      rankPanel.innerHTML = "<h3>Ranks (Online)</h3><div>Loading…</div>";
-
-      async function refreshRanks() {
-        const list = await fetchLeaderboard();
-        const time = new Date().toLocaleTimeString();
-        rankPanel.innerHTML = `<h3>Ranks (Online)</h3>${list.join("<br>")}<br><br><small>Updated: ${time}</small>`;
-      }
-
-      await refreshRanks();
-      rankRefreshInterval = setInterval(refreshRanks, 10000);
+      rankPanel.innerHTML = "<h3>Ranks (Online)</h3><div>Loading...</div>";
+      const list = await fetchLeaderboard();
+      rankPanel.innerHTML = "<h3>Ranks (Online)</h3>" + list.join("<br>");
     });
-
-    function renderOwnedAuras() {
-      const div = document.getElementById("owned-auras");
-      div.innerHTML = "";
-      ownedAuras.forEach(aura => {
-        const btn = document.createElement("button");
-        btn.className = "equip-button";
-        btn.innerText = `${aura} (Equip)`;
-        btn.onclick = () => equipAura(aura);
-        div.appendChild(btn);
-      });
-      document.getElementById("equipped-aura").innerText = equippedAura;
-    }
-
-    function updateDisplay() {
-      document.getElementById("diamond-count").textContent = diamonds.toLocaleString();
-      document.getElementById("gold-count").textContent = gold.toLocaleString();
-      document.getElementById("emerald-count").textContent = emeralds.toLocaleString();
-      document.getElementById("equipped-aura").innerText = equippedAura;
-    }
-
-    function showMessage(msg) {
-      const el = document.getElementById("text-container");
-      el.innerText = msg;
-      setTimeout(() => el.innerText = "", 2000);
-    }
-
-    function saveCounts() {
-      localStorage.setItem("diamondCount", diamonds);
-      localStorage.setItem("goldCount", gold);
-      localStorage.setItem("emeraldCount", emeralds);
-      localStorage.setItem("ownedAuras", JSON.stringify(ownedAuras));
-      localStorage.setItem("equippedAura", equippedAura);
-      saveHighScore();
-    }
 
     renderOwnedAuras();
     updateDisplay();
