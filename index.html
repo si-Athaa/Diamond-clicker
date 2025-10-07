@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Clicker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f0f8ff;
+      padding: 20px;
+    }
+
+    button {
+      font-size: 20px;
+      padding: 12px 25px;
+      margin: 10px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      user-select: none;
+    }
+
+    #diamond-button {
+      background-color: #00bfff;
+    }
+    #diamond-button:hover {
+      background-color: #1e90ff;
+    }
+
+    #gold-button {
+      background-color: #daa520;
+    }
+    #gold-button:hover {
+      background-color: #b8860b;
+    }
+
+    #emerald-button {
+      background-color: #50c878;
+    }
+    #emerald-button:hover {
+      background-color: #3aa655;
+    }
+
+    #buy-gold-button {
+      background-color: #28a745;
+    }
+    #buy-gold-button:disabled {
+      background-color: #94d3a2;
+      cursor: not-allowed;
+    }
+    #buy-gold-button:hover:not(:disabled) {
+      background-color: #218838;
+    }
+
+    #buy-emerald-button {
+      background-color: #2e8b57;
+    }
+    #buy-emerald-button:disabled {
+      background-color: #a0c8b4;
+      cursor: not-allowed;
+    }
+    #buy-emerald-button:hover:not(:disabled) {
+      background-color: #1e5f3a;
+    }
+
+    #counters {
+      font-size: 28px;
+      margin: 15px 0;
+    }
+
+    .cps-display {
+      font-size: 18px;
+      margin: 5px 0 15px 0;
+      color: #444;
+    }
+
+    #text-container {
+      margin-top: 20px;
+      height: 30px;
+      font-size: 22px;
+      color: #555;
+      min-height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>💎 Diamond, Gold & Emerald Clicker (Multiple Emeralds)</h1>
+
+  <div id="counters">
+    Diamonds: <span id="diamond-count">0</span><br>
+    Gold: <span id="gold-count">0</span><br>
+    Emeralds: <span id="emerald-count">0</span>
+  </div>
+
+  <button id="diamond-button">Click to Get 💎</button>
+  <div class="cps-display" id="diamond-cps">Diamond CPS: Left: 0 | Right: 0</div>
+
+  <button id="gold-button" disabled>Click to Get Gold 🪙</button>
+  <div class="cps-display" id="gold-cps">Gold CPS: Left: 0 | Right: 0</div>
+
+  <button id="emerald-button" disabled>Click to Get Emerald 💚</button>
+  <div class="cps-display" id="emerald-cps">Emerald CPS: Left: 0 | Right: 0</div>
+
+  <br>
+  <button id="buy-gold-button">Buy Gold for 100 Diamonds</button>
+  <button id="buy-emerald-button">Buy Emerald for 1000 Diamonds & 700 Gold</button>
+
+  <div id="text-container"></div>
+
+  <script>
+    let diamonds = 0;
+    let gold = 0;
+    let emeralds = 0;
+
+    // CPS counters (counts clicks within current second)
+    const cps = {
+      diamond: { left: 0, right: 0 },
+      gold: { left: 0, right: 0 },
+      emerald: { left: 0, right: 0 }
+    };
+
+    // Load saved counts
+    if(localStorage.getItem("diamondCount")) {
+      diamonds = parseInt(localStorage.getItem("diamondCount"));
+    }
+    if(localStorage.getItem("goldCount")) {
+      gold = parseInt(localStorage.getItem("goldCount"));
+    }
+    if(localStorage.getItem("emeraldCount")) {
+      emeralds = parseInt(localStorage.getItem("emeraldCount"));
+    }
+
+    updateDisplay();
+    updateButtons();
+
+    function setupClickHandlers(buttonId, resourceName, addFunction) {
+      const btn = document.getElementById(buttonId);
+      btn.addEventListener('click', (e) => {
+        addFunction();
+        cps[resourceName].left++;
+      });
+      btn.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        addFunction();
+        cps[resourceName].right++;
+      });
+    }
+
+    setupClickHandlers('diamond-button', 'diamond', addDiamond);
+    setupClickHandlers('gold-button', 'gold', addGold);
+    setupClickHandlers('emerald-button', 'emerald', addEmerald);
+
+    document.getElementById('buy-gold-button').addEventListener('click', buyGold);
+    document.getElementById('buy-emerald-button').addEventListener('click', buyEmerald);
+
+    function addDiamond() {
+      diamonds++;
+      saveCounts();
+      updateDisplay();
+      updateButtons();
+      showMessage("You got a 💎!");
+    }
+
+    function addGold() {
+      if (gold > 0) {
+        gold++;
+        saveCounts();
+        updateDisplay();
+        showMessage("You got a 🪙!");
+      }
+    }
+
+    function addEmerald() {
+      if (emeralds > 0) {
+        emeralds++;
+        saveCounts();
+        updateDisplay();
+        showMessage("You got a 💚!");
+      }
+    }
+
+    function buyGold() {
+      if (diamonds >= 100 && gold === 0) {
+        diamonds -= 100;
+        gold = 1;
+        saveCounts();
+        updateDisplay();
+        updateButtons();
+        showMessage("Gold purchased! You can now click gold 🪙.");
+      } else if (gold > 0) {
+        showMessage("You already own gold!");
+      } else {
+        showMessage("Not enough diamonds to buy gold!");
+      }
+    }
+
+    function buyEmerald() {
+      if (diamonds >= 1000 && gold >= 700) {
+        diamonds -= 1000;
+        gold -= 700;
+        emeralds++;
+        saveCounts();
+        updateDisplay();
+        updateButtons();
+        showMessage("Emerald purchased! You can now click emerald 💚.");
+      } else {
+        showMessage("Not enough diamonds or gold to buy emerald!");
+      }
+    }
+
+    function saveCounts() {
+      localStorage.setItem("diamondCount", diamonds);
+      localStorage.setItem("goldCount", gold);
+      localStorage.setItem("emeraldCount", emeralds);
+    }
+
+    function updateDisplay() {
+      document.getElementById("diamond-count").innerText = diamonds;
+      document.getElementById("gold-count").innerText = gold;
+      document.getElementById("emerald-count").innerText = emeralds;
+    }
+
+    function updateButtons() {
+      // buy gold only if diamonds >=100 and no gold yet
+      document.getElementById("buy-gold-button").disabled = !(diamonds >= 100 && gold === 0);
+
+      // buy emerald enabled if diamonds>=1000 and gold >=700 (can buy multiple)
+      document.getElementById("buy-emerald-button").disabled = !(diamonds >= 1000 && gold >= 700);
+
+      document.getElementById("gold-button").disabled = (gold === 0);
+      document.getElementById("emerald-button").disabled = (emeralds === 0);
+    }
+
+    function showMessage(text) {
+      const container = document.getElementById("text-container");
+      container.innerText = text;
+      setTimeout(() => {
+        container.innerText = "";
+      }, 1500);
+    }
+
+    // Update CPS display every second and reset counts
+    setInterval(() => {
+      document.getElementById("diamond-cps").innerText = `Diamond CPS: Left: ${cps.diamond.left} | Right: ${cps.diamond.right}`;
+      document.getElementById("gold-cps").innerText = `Gold CPS: Left: ${cps.gold.left} | Right: ${cps.gold.right}`;
+      document.getElementById("emerald-cps").innerText = `Emerald CPS: Left: ${cps.emerald.left} | Right: ${cps.emerald.right}`;
+
+      // Reset CPS counts for next second
+      cps.diamond.left = 0;
+      cps.diamond.right = 0;
+      cps.gold.left = 0;
+      cps.gold.right = 0;
+      cps.emerald.left = 0;
+      cps.emerald.right = 0;
+    }, 1000);
+  </script>
+</body>
+</html>
