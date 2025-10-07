@@ -1,21 +1,18 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>💎 Diamond, Gold & Emerald Clicker + Ranks</title>
+  <title>Diamond Clicker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background: linear-gradient(135deg, #d7ecff, #f5ffff);
+      background: linear-gradient(to bottom right, #e0f7ff, #f0fff4);
       padding: 20px;
     }
-    h1 { margin-bottom: 10px; }
 
     button {
       font-size: 18px;
-      padding: 10px 22px;
+      padding: 10px 20px;
       margin: 8px;
       border: none;
       border-radius: 10px;
@@ -25,27 +22,17 @@
     }
 
     #diamond-button { background-color: #00bfff; }
-    #diamond-button:hover { background-color: #1e90ff; }
-
     #gold-button { background-color: #daa520; }
-    #gold-button:hover { background-color: #b8860b; }
-
     #emerald-button { background-color: #50c878; }
-    #emerald-button:hover { background-color: #3aa655; }
-
-    #buy-gold-button, #upgrade-diamond, #upgrade-gold, #upgrade-emerald { background-color: #28a745; }
-    #buy-gold-button:hover, #upgrade-diamond:hover, #upgrade-gold:hover, #upgrade-emerald:hover { background-color: #218838; }
-
-    #buy-emerald-button {
-      background-color: #2e8b57;
-    }
-    #buy-emerald-button:hover {
-      background-color: #1e5f3a;
-    }
+    #buy-gold-button { background-color: #28a745; }
+    #buy-emerald-button { background-color: #2e8b57; }
+    .upgrade-button { background-color: #6f42c1; }
+    #roll-aura-button { background-color: #ff1493; }
+    .equip-button { background-color: #555; }
 
     #counters { font-size: 26px; margin: 10px 0; }
-    .cps-display { font-size: 16px; margin-bottom: 10px; color: #444; }
-    #text-container { margin-top: 20px; height: 30px; font-size: 22px; color: #333; }
+    #text-container { margin-top: 15px; font-size: 20px; color: #555; min-height: 30px; }
+    #aura-section { margin-top: 30px; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
 
     /* Rank UI */
     #rank-button {
@@ -86,8 +73,7 @@
   </style>
 </head>
 <body>
-  <h1>💎 Diamond, Gold & Emerald Clicker</h1>
-
+  <h1>💎 Gold & Emerald Clicker + AURA SYSTEM 🌌</h1>
   <div id="playerName"></div>
 
   <div id="counters">
@@ -97,23 +83,33 @@
   </div>
 
   <button id="diamond-button">Click 💎</button>
-  <div class="cps-display" id="diamond-cps">Diamond CPS: L:0 | R:0</div>
-
   <button id="gold-button" disabled>Click 🪙</button>
-  <div class="cps-display" id="gold-cps">Gold CPS: L:0 | R:0</div>
-
   <button id="emerald-button" disabled>Click 💚</button>
-  <div class="cps-display" id="emerald-cps">Emerald CPS: L:0 | R:0</div>
 
   <br>
-  <button id="buy-gold-button">Buy Gold (100 💎)</button>
-  <button id="buy-emerald-button">Buy Emerald (1000 💎 + 700 🪙)</button>
+  <button id="buy-gold-button">Buy Gold for 100 Diamonds</button>
+  <button id="buy-emerald-button">Buy Emerald for 1000 Diamonds & 700 Gold</button>
 
-  <br><hr><br>
+  <hr>
+
   <h2>🔼 Upgrades</h2>
-  <button id="upgrade-diamond">Upgrade Diamond (Cost: 500,000 💎)</button><br>
-  <button id="upgrade-gold" disabled>Upgrade Gold (Cost: 10,000,000 🪙)</button><br>
-  <button id="upgrade-emerald" disabled>Upgrade Emerald (Cost: 5 💚)</button>
+  <button class="upgrade-button" id="upgrade-diamond">Upgrade Diamond (Cost: 500,000 💎)</button>
+  <div>Diamond Upgrade Level: <span id="diamond-upgrade-level">0</span></div>
+
+  <button class="upgrade-button" id="upgrade-gold">Upgrade Gold (Cost: 10,000,000 🪙)</button>
+  <div>Gold Upgrade Level: <span id="gold-upgrade-level">0</span></div>
+
+  <button class="upgrade-button" id="upgrade-emerald">Upgrade Emerald (Cost: 30,000,000 💚)</button>
+  <div>Emerald Upgrade Level: <span id="emerald-upgrade-level">0</span></div>
+
+  <div id="aura-section">
+    <h2>🌠 Aura System</h2>
+    <button id="roll-aura-button">🎲 Roll Aura (Cost: 2,000,000 💚)</button>
+    <div id="aura-result"></div>
+    <h3>Owned Auras:</h3>
+    <div id="owned-auras"></div>
+    <h3>Equipped Aura: <span id="equipped-aura">None</span></h3>
+  </div>
 
   <div id="text-container"></div>
 
@@ -123,182 +119,147 @@
   <script type="module">
     /* ---------- Firebase Setup ---------- */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs, updateDoc } 
+    import { getFirestore, doc, setDoc, getDoc, collection, query, orderBy, limit, getDocs, updateDoc }
       from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } 
+    import { getAuth, signInAnonymously, onAuthStateChanged }
       from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
-    apiKey: "AIzaSyB7c4UCU7qpVecl5JM-wRSMnqFz9DCjdlA",
-    authDomain: "diamondclicker-b3a0a.firebaseapp.com",
-    projectId: "diamondclicker-b3a0a",
-    storageBucket: "diamondclicker-b3a0a.firebasestorage.app",
-    messagingSenderId: "334913006559",
-    appId: "1:334913006559:web:f1b73789e56c61d4a8b26a"
-  };
+  apiKey: "AIzaSyB7c4UCU7qpVecl5JM-wRSMnqFz9DCjdlA",
+  authDomain: "diamondclicker-b3a0a.firebaseapp.com",
+  projectId: "diamondclicker-b3a0a",
+  storageBucket: "diamondclicker-b3a0a.firebasestorage.app",
+  messagingSenderId: "334913006559",
+  appId: "1:334913006559:web:f1b73789e56c61d4a8b26a"
+};
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
     let currentUser = null;
     signInAnonymously(auth);
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-      console.log("Signed in as", user.uid);
-    });
+    onAuthStateChanged(auth, user => { currentUser = user; });
 
     /* ---------- Player Setup ---------- */
     let playerName = localStorage.getItem("playerName");
     while (!playerName || playerName.trim() === "") {
-      playerName = prompt("Masukkan nama kamu (tidak boleh kosong):");
+      playerName = prompt("Enter your name:");
     }
     localStorage.setItem("playerName", playerName);
     document.getElementById("playerName").textContent = `👤 Player: ${playerName}`;
 
     /* ---------- Game Variables ---------- */
-    let diamonds = 0, gold = 0, emeralds = 0;
-    let diamondUpgradeLevel = 0, goldUpgradeLevel = 0, emeraldUpgradeLevel = 0;
-    let diamondPerClick = 1, goldPerClick = 1, emeraldPerClick = 1;
-    let diamondUpgradeCost = 500000, goldUpgradeCost = 10000000, emeraldUpgradeCost = 5;
-    const cps = { diamond:{left:0,right:0}, gold:{left:0,right:0}, emerald:{left:0,right:0} };
+    let diamonds = parseInt(localStorage.getItem("diamondCount") || "0");
+    let gold = parseInt(localStorage.getItem("goldCount") || "0");
+    let emeralds = parseInt(localStorage.getItem("emeraldCount") || "0");
+    let diamondUpgradeLevel = parseInt(localStorage.getItem("diamondUpgradeLevel") || "0");
+    let goldUpgradeLevel = parseInt(localStorage.getItem("goldUpgradeLevel") || "0");
+    let emeraldUpgradeLevel = parseInt(localStorage.getItem("emeraldUpgradeLevel") || "0");
+    let ownedAuras = JSON.parse(localStorage.getItem("ownedAuras") || "[]");
+    let equippedAura = localStorage.getItem("equippedAura") || "None";
+    let diamondClickPower = 1, goldClickPower = 1, emeraldClickPower = 1;
 
-    /* ---------- Load Saved Progress ---------- */
-    if(localStorage.getItem("diamondCount")) diamonds = parseInt(localStorage.getItem("diamondCount"));
-    if(localStorage.getItem("goldCount")) gold = parseInt(localStorage.getItem("goldCount"));
-    if(localStorage.getItem("emeraldCount")) emeralds = parseInt(localStorage.getItem("emeraldCount"));
-    if(localStorage.getItem("diamondUpgradeLevel")) diamondUpgradeLevel = parseInt(localStorage.getItem("diamondUpgradeLevel"));
-    if(localStorage.getItem("goldUpgradeLevel")) goldUpgradeLevel = parseInt(localStorage.getItem("goldUpgradeLevel"));
-    if(localStorage.getItem("emeraldUpgradeLevel")) emeraldUpgradeLevel = parseInt(localStorage.getItem("emeraldUpgradeLevel"));
+    const auraList = [
+      { name: "Common", rate: 49.9, bonus: { diamond:15, gold:20, emerald:25 }},
+      { name: "Uncommon", rate: 29.9, bonus: { diamond:20, gold:25, emerald:35 }},
+      { name: "Rare", rate: 24.9, bonus: { diamond:50, gold:55, emerald:60 }},
+      { name: "Epic", rate: 20.9, bonus: { diamond:65, gold:68, emerald:73 }},
+      { name: "Legendary", rate: 18.9, bonus: { diamond:15000, gold:20000, emerald:25000 }},
+      { name: "Powered", rate: 14.9, bonus: { diamond:30000, gold:45000, emerald:54000 }},
+      { name: "Starlight", rate: 10.9, bonus: { diamond:80000, gold:86000, emerald:92000 }},
+      { name: "Exotic", rate: 7.9, bonus: { diamond:129000, gold:450000, emerald:110000 }},
+      { name: "Celestial-Divine", rate: 4.9, bonus: { diamond:15000000, gold:2000000, emerald:20000000 }},
+      { name: "Abyssal Hunter", rate: 1.0, bonus: { diamond:50000000, gold:55000000, emerald:55000000 }}
+    ];
 
-    updateStats();
-
-    /* ---------- Button Setup ---------- */
-    function setupClick(btnId, resName, func) {
-      const btn = document.getElementById(btnId);
-      btn.addEventListener('click', () => { func(); cps[resName].left++; });
-      btn.addEventListener('contextmenu', e => { e.preventDefault(); func(); cps[resName].right++; });
+    function getAuraBonus() {
+      const aura = auraList.find(a => a.name === equippedAura);
+      return aura ? aura.bonus : { diamond:0, gold:0, emerald:0 };
     }
-
-    setupClick('diamond-button', 'diamond', addDiamond);
-    setupClick('gold-button', 'gold', addGold);
-    setupClick('emerald-button', 'emerald', addEmerald);
-
-    document.getElementById('buy-gold-button').addEventListener('click', buyGold);
-    document.getElementById('buy-emerald-button').addEventListener('click', buyEmerald);
-    document.getElementById('upgrade-diamond').addEventListener('click', upgradeDiamond);
-    document.getElementById('upgrade-gold').addEventListener('click', upgradeGold);
-    document.getElementById('upgrade-emerald').addEventListener('click', upgradeEmerald);
 
     /* ---------- Click Actions ---------- */
     function addDiamond() {
-      diamonds += diamondPerClick;
-      save(); updateStats();
-      showMsg(`+${diamondPerClick} 💎`);
+      const bonus = getAuraBonus();
+      diamonds += (1 + bonus.diamond);
+      save(); updateDisplay();
       saveHighScore();
     }
-    function addGold() { if (gold>0){gold+=goldPerClick;save();updateStats();showMsg(`+${goldPerClick} 🪙`);} }
-    function addEmerald(){if(emeralds>0){emeralds+=emeraldPerClick;save();updateStats();showMsg(`+${emeraldPerClick} 💚`);} }
 
-    /* ---------- Buy Unlocks ---------- */
-    function buyGold(){if(diamonds>=100&&gold===0){diamonds-=100;gold=1;showMsg("Gold unlocked!");}else showMsg("Not enough 💎!");save();updateStats();}
-    function buyEmerald(){if(diamonds>=1000&&gold>=700){diamonds-=1000;gold-=700;emeralds++;showMsg("Emerald unlocked!");}else showMsg("Not enough resources!");save();updateStats();}
+    function addGold() { const bonus=getAuraBonus(); gold+=(1+bonus.gold); save(); updateDisplay(); }
+    function addEmerald() { const bonus=getAuraBonus(); emeralds+=(1+bonus.emerald); save(); updateDisplay(); }
 
-    /* ---------- Upgrades ---------- */
-    function upgradeDiamond(){
-      if(diamonds>=diamondUpgradeCost){
-        diamonds-=diamondUpgradeCost;
-        diamondUpgradeLevel++;
-        diamondPerClick*=2;
-        if(diamondUpgradeLevel===1)diamondPerClick+=2;
-        diamondUpgradeCost*=5;
-        showMsg(`Diamond upgraded Lv.${diamondUpgradeLevel}!`);
-      } else showMsg("Not enough 💎!");
-      save();updateStats();
+    /* ---------- Roll Aura ---------- */
+    function getAuraByChance() {
+      const rand = Math.random() * 100; let sum = 0;
+      for (let aura of auraList) { sum += aura.rate; if (rand <= sum) return aura; }
+      return auraList[0];
+    }
+    function rollAura() {
+      if (emeralds < 2000000) return showMsg("Not enough Emeralds!");
+      emeralds -= 2000000;
+      const aura = getAuraByChance();
+      if (!ownedAuras.includes(aura.name)) ownedAuras.push(aura.name);
+      showMsg(`🎆 You got ${aura.name} Aura!`);
+      save(); renderOwnedAuras(); updateDisplay();
     }
 
-    function upgradeGold(){
-      if(gold>=goldUpgradeCost){
-        gold-=goldUpgradeCost;
-        goldUpgradeLevel++;
-        goldPerClick*=2;
-        if(goldUpgradeLevel===1)goldPerClick+=4;
-        goldUpgradeCost*=5;
-        showMsg(`Gold upgraded Lv.${goldUpgradeLevel}!`);
-      } else showMsg("Not enough 🪙!");
-      save();updateStats();
-    }
+    function equipAura(name){equippedAura=name;save();updateDisplay();showMsg(`✨ Equipped ${name}!`);}
 
-    function upgradeEmerald(){
-      if(emeralds>=emeraldUpgradeCost){
-        emeralds-=emeraldUpgradeCost;
-        emeraldUpgradeLevel++;
-        emeraldPerClick*=2;
-        emeraldUpgradeCost*=5;
-        showMsg(`Emerald upgraded Lv.${emeraldUpgradeLevel}!`);
-      } else showMsg("Not enough 💚!");
-      save();updateStats();
-    }
-
-    /* ---------- Save & UI ---------- */
+    /* ---------- Save & Display ---------- */
     function save(){
       localStorage.setItem("diamondCount", diamonds);
       localStorage.setItem("goldCount", gold);
       localStorage.setItem("emeraldCount", emeralds);
-      localStorage.setItem("diamondUpgradeLevel", diamondUpgradeLevel);
-      localStorage.setItem("goldUpgradeLevel", goldUpgradeLevel);
-      localStorage.setItem("emeraldUpgradeLevel", emeraldUpgradeLevel);
+      localStorage.setItem("ownedAuras", JSON.stringify(ownedAuras));
+      localStorage.setItem("equippedAura", equippedAura);
     }
 
-    function updateStats(){
-      document.getElementById("diamond-count").innerText = diamonds.toLocaleString();
-      document.getElementById("gold-count").innerText = gold.toLocaleString();
-      document.getElementById("emerald-count").innerText = emeralds.toLocaleString();
-
-      document.getElementById("upgrade-diamond").innerText=`Upgrade Diamond (Lv ${diamondUpgradeLevel}) - Cost: ${diamondUpgradeCost.toLocaleString()} 💎`;
-      document.getElementById("upgrade-gold").innerText=`Upgrade Gold (Lv ${goldUpgradeLevel}) - Cost: ${goldUpgradeCost.toLocaleString()} 🪙`;
-      document.getElementById("upgrade-emerald").innerText=`Upgrade Emerald (Lv ${emeraldUpgradeLevel}) - Cost: ${emeraldUpgradeCost.toLocaleString()} 💚`;
-
-      document.getElementById("gold-button").disabled=gold===0;
-      document.getElementById("emerald-button").disabled=emeralds===0;
-      document.getElementById("upgrade-gold").disabled=gold===0;
-      document.getElementById("upgrade-emerald").disabled=emeralds===0;
+    function updateDisplay(){
+      document.getElementById("diamond-count").innerText=diamonds.toLocaleString();
+      document.getElementById("gold-count").innerText=gold.toLocaleString();
+      document.getElementById("emerald-count").innerText=emeralds.toLocaleString();
+      document.getElementById("equipped-aura").innerText=equippedAura;
     }
 
-    function showMsg(text){
-      const box=document.getElementById("text-container");
-      box.innerText=text;
-      setTimeout(()=>box.innerText="",1500);
+    function renderOwnedAuras(){
+      const div=document.getElementById("owned-auras");
+      div.innerHTML="";
+      ownedAuras.forEach(aura=>{
+        const btn=document.createElement("button");
+        btn.className="equip-button";
+        btn.innerText=aura+" (Equip)";
+        btn.onclick=()=>equipAura(aura);
+        div.appendChild(btn);
+      });
     }
 
-    setInterval(()=>{
-      document.getElementById("diamond-cps").innerText=`Diamond CPS: L:${cps.diamond.left} | R:${cps.diamond.right}`;
-      document.getElementById("gold-cps").innerText=`Gold CPS: L:${cps.gold.left} | R:${cps.gold.right}`;
-      document.getElementById("emerald-cps").innerText=`Emerald CPS: L:${cps.emerald.left} | R:${cps.emerald.right}`;
-      cps.diamond={left:0,right:0};cps.gold={left:0,right:0};cps.emerald={left:0,right:0};
-    },1000);
+    function showMsg(msg){const el=document.getElementById("text-container");el.innerText=msg;setTimeout(()=>el.innerText="",2000);}
 
-    /* ---------- Firebase High Score ---------- */
+    document.getElementById("diamond-button").onclick=addDiamond;
+    document.getElementById("gold-button").onclick=addGold;
+    document.getElementById("emerald-button").onclick=addEmerald;
+    document.getElementById("roll-aura-button").onclick=rollAura;
+    renderOwnedAuras(); updateDisplay();
+
+    /* ---------- Save High Score ---------- */
     async function saveHighScore(){
       if(!currentUser)return;
-      const ref=doc(db,"diamondScores",currentUser.uid);
+      const ref=doc(db,"auraScores",currentUser.uid);
       const snap=await getDoc(ref);
-      if(!snap.exists()){
-        await setDoc(ref,{name:playerName,diamonds});
-      }else{
-        const oldScore=snap.data().diamonds||0;
-        if(diamonds>oldScore){
-          await updateDoc(ref,{name:playerName,diamonds});
-        }
+      if(!snap.exists()) await setDoc(ref,{name:playerName,diamonds});
+      else {
+        const old=snap.data().diamonds||0;
+        if(diamonds>old) await updateDoc(ref,{name:playerName,diamonds});
       }
     }
 
-    /* ---------- Rank Panel ---------- */
+    /* ---------- Ranks ---------- */
     const rankButton=document.getElementById("rank-button");
     const rankPanel=document.getElementById("rank-panel");
     let rankRefreshInterval=null;
 
     async function fetchLeaderboard(){
-      const q=query(collection(db,"diamondScores"),orderBy("diamonds","desc"),limit(30));
+      const q=query(collection(db,"auraScores"),orderBy("diamonds","desc"),limit(30));
       const snap=await getDocs(q);
       return snap.docs.map((doc,i)=>{
         const data=doc.data();
@@ -307,22 +268,16 @@
     }
 
     rankButton.addEventListener("click",async()=>{
-      if(rankPanel.style.display==="block"){
-        rankPanel.style.display="none";
-        clearInterval(rankRefreshInterval);
-        return;
-      }
+      if(rankPanel.style.display==="block"){rankPanel.style.display="none";clearInterval(rankRefreshInterval);return;}
       rankPanel.style.display="block";
       rankPanel.innerHTML="<h3>Ranks (Online)</h3><div>Loading…</div>";
-
       async function refreshRanks(){
         const list=await fetchLeaderboard();
         const time=new Date().toLocaleTimeString();
         const myRank=list.findIndex(line=>line.includes(playerName));
         const rankText=myRank>=0?`<br><b>👑 Your Rank: #${myRank+1}</b>`:"";
-        rankPanel.innerHTML=`<h3>Ranks (Online)</h3>${list.join("<br>")}${rankText}<br><br><small>Last updated: ${time}</small>`;
+        rankPanel.innerHTML=`<h3>Ranks (Online)</h3>${list.join("<br>")}${rankText}<br><br><small>Updated: ${time}</small>`;
       }
-
       await refreshRanks();
       rankRefreshInterval=setInterval(refreshRanks,10000);
     });
