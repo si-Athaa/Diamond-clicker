@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Clicker with Aura System + Ranks (Fixed)</title>
+  <title>Clicker with Aura UPDATE</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -9,7 +9,6 @@
       background: linear-gradient(to bottom right, #e0f7ff, #f0fff4);
       padding: 20px;
     }
-
     button {
       font-size: 18px;
       padding: 10px 20px;
@@ -20,7 +19,6 @@
       color: white;
       user-select: none;
     }
-
     #diamond-button { background-color: #00bfff; }
     #gold-button { background-color: #daa520; }
     #emerald-button { background-color: #50c878; }
@@ -47,7 +45,6 @@
       font-size: 14px;
       user-select: none;
     }
-
     #rank-panel {
       position: fixed;
       top: 60px;
@@ -63,7 +60,6 @@
       font-size: 14px;
       min-width: 160px;
     }
-
     #rank-panel h3 {
       margin: 0 0 6px 0;
       font-size: 16px;
@@ -103,7 +99,7 @@
 
   <div id="aura-section">
     <h2>🌠 Aura System</h2>
-    <button id="roll-aura-button">🎲 Roll Aura (Cost: 2,000,000 💚)</button>
+    <button id="roll-aura-button">🎲 Roll Aura (Cost: 20,000 💚)</button>
     <div id="aura-result"></div>
     <h3>Owned Auras:</h3>
     <div id="owned-auras"></div>
@@ -123,13 +119,13 @@
       from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
     const firebaseConfig = {
-     apiKey: "AIzaSyB7c4UCU7qpVecl5JM-wRSMnqFz9DCjdlA",
-     authDomain: "diamondclicker-b3a0a.firebaseapp.com",
-     projectId: "diamondclicker-b3a0a",
-     storageBucket: "diamondclicker-b3a0a.firebasestorage.app",
-     messagingSenderId: "334913006559",
-     appId: "1:334913006559:web:f1b73789e56c61d4a8b26a"
-};
+      apiKey: "AIzaSyAeS3jgX2iatIkI_jrCqW7bfyjXuF-QvmI",
+      authDomain: "clickercoin.firebaseapp.com",
+      projectId: "clickercoin",
+      storageBucket: "clickercoin.firebasestorage.app",
+      messagingSenderId: "1084556702855",
+      appId: "1:1084556702855:web:62ab02d23498f167d43422"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -156,7 +152,6 @@
     let emeraldUpgradeLevel = parseInt(localStorage.getItem("emeraldUpgradeLevel") || "0");
     let ownedAuras = JSON.parse(localStorage.getItem("ownedAuras") || "[]");
     let equippedAura = localStorage.getItem("equippedAura") || "None";
-    let diamondClickPower = 1, goldClickPower = 1, emeraldClickPower = 1;
 
     const auraList = [
       { name: "Common", rate: 49.9, bonus: { diamond:15, gold:20, emerald:25 }},
@@ -199,8 +194,8 @@
     }
 
     function rollAura() {
-      if (emeralds < 2000000) return showMsg("Not enough Emeralds!");
-      emeralds -= 2000000;
+      if (emeralds < 20000) return showMsg("Not enough Emeralds!");
+      emeralds -= 20000;
       const aura = getAuraByChance();
       if (!ownedAuras.includes(aura.name)) ownedAuras.push(aura.name);
       showMsg(`🎆 You got ${aura.name} Aura!`);
